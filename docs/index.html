@@ -3,115 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Admin Panel</title>
+    <title>Netflix Admin Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --red: #E50914; --black: #141414; --grey: #2f2f2f; }
         body { font-family: 'Kanit', sans-serif; background: var(--black); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background: rgba(0,0,0,0.9); padding: 40px; border-radius: 8px; width: 100%; max-width: 400px; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
-        h2 { color: var(--red); text-align: center; margin-bottom: 30px; font-weight: 600; }
+        .card { background: rgba(0,0,0,0.95); padding: 40px; border-radius: 8px; width: 100%; max-width: 400px; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
+        h2 { color: var(--red); text-align: center; margin-bottom: 30px; font-weight: 600; letter-spacing: 1px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-size: 13px; color: #b3b3b3; text-transform: uppercase; }
         input, select { width: 100%; padding: 14px; background: var(--grey); border: none; border-radius: 4px; color: white; font-size: 16px; outline: none; box-sizing: border-box; }
         input:focus { border-bottom: 3px solid var(--red); }
         .info { background: #181818; padding: 20px; border-radius: 4px; margin: 20px 0; display: none; border: 1px solid #333; }
         .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .btn { width: 100%; background: var(--red); color: white; border: none; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn:disabled { background: #555; }
+        .val { font-weight: 600; }
+        .btn { width: 100%; background: var(--red); color: white; border: none; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn:hover { background: #ff1e29; transform: scale(1.02); }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+        #status { text-align: center; color: var(--red); font-size: 14px; margin-top: 15px; font-weight: 300; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>แก้ไขเงิน</h2>
-        <div class="form-group">
-            <label>รหัสผ่าน</label>
-            <input type="password" id="pass" placeholder="ใส่รหัสแอดมิน">
-        </div>
-        <div class="form-group">
-            <label>เลือกชื่อสมาชิก</label>
-            <select id="userSel" onchange="updateUI()"><option value="">-- กำลังโหลด... --</option></select>
-        </div>
-        <div id="info" class="info">
-            <div class="row"><span>ยอดเดือนนี้ (B):</span><span id="amt">0.00</span></div>
-            <div class="row"><span>ยอดค้างชำระ (C):</span><span id="bal" style="color:var(--red); font-weight:600;">0.00</span></div>
-        </div>
-        <div class="form-group">
-            <label>จำนวนเงินที่จ่าย (บาท)</label>
-            <input type="number" id="payIn" step="0.01" placeholder="0.00">
-        </div>
-        <button id="submitBtn" class="btn" onclick="submit()">ยืนยันการหักเงิน</button>
+
+<div class="card">
+    <h2>แก้ไขเงิน</h2>
+    
+    <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="pass" placeholder="ใส่รหัสแอดมิน">
     </div>
 
-    <script>
-        // เปลี่ยน URL เป็น URL ล่าสุดของคุณที่ได้จากการ Deploy
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
-        let userData = [];
+    <div class="form-group">
+        <label>เลือกชื่อสมาชิก</label>
+        <select id="userSel" onchange="updateUI()">
+            <option value="">-- กำลังโหลดรายชื่อ... --</option>
+        </select>
+    </div>
 
-        async function loadUsers() {
-            try {
-                const res = await fetch(API_URL + "?t=" + Date.now());
-                const raw = await res.json();
-                
-                // กรองรายชื่ออีกชั้นหนึ่งเพื่อความชัวร์ (ลบ undefined ทิ้ง)
-                userData = raw.filter(u => u.name && u.name !== "undefined");
+    <div id="infoBox" class="info">
+        <div class="row"><span>ยอดเดือนนี้ (B):</span><span id="txtAmt" class="val">0.00</span></div>
+        <div class="row"><span>ยอดค้างชำระ (C):</span><span id="txtBal" class="val" style="color:var(--red)">0.00</span></div>
+    </div>
 
-                const select = document.getElementById('userSel');
-                select.innerHTML = '<option value="">-- เลือกชื่อสมาชิก --</option>';
-                
-                userData.forEach(u => {
+    <div class="form-group">
+        <label>จำนวนเงินที่หัก (บาท)</label>
+        <input type="number" id="payIn" step="0.01" placeholder="0.00">
+    </div>
+
+    <button id="submitBtn" class="btn" onclick="submitPay()">ยืนยันการหักเงิน</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    // ใช้ URL เดิมที่คุณยืนยันว่าเข้าได้
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
+    let users = [];
+
+    // ฟังก์ชันโหลดข้อมูล
+    async function loadData() {
+        const select = document.getElementById('userSel');
+        const status = document.getElementById('status');
+        try {
+            status.innerText = "กำลังเชื่อมต่อฐานข้อมูล...";
+            // เพิ่มโหมด no-cache เพื่อป้องกันดึงค่าเก่า
+            const response = await fetch(API_URL, { cache: "no-store" });
+            users = await response.json();
+            
+            select.innerHTML = '<option value="">-- เลือกรายชื่อสมาชิก --</option>';
+            if (users.length === 0) {
+                status.innerText = "ไม่พบรายชื่อในระบบ";
+                return;
+            }
+
+            users.forEach(u => {
+                if(u.name) {
                     let opt = document.createElement('option');
                     opt.value = u.name;
                     opt.innerText = u.name;
                     select.appendChild(opt);
-                });
-            } catch (err) {
-                alert("โหลดข้อมูลไม่สำเร็จ กรุณาเช็คการ Deploy");
-            }
-        }
-
-        function updateUI() {
-            const val = document.getElementById('userSel').value;
-            const u = userData.find(x => x.name === val);
-            if(u) {
-                document.getElementById('amt').innerText = Number(u.amount).toFixed(2);
-                document.getElementById('bal').innerText = Number(u.balance).toFixed(2);
-                document.getElementById('payIn').value = (Number(u.amount) + Number(u.balance)).toFixed(2);
-                document.getElementById('info').style.display = 'block';
-            } else {
-                document.getElementById('info').style.display = 'none';
-            }
-        }
-
-        async function submit() {
-            const name = document.getElementById('userSel').value;
-            const amt = document.getElementById('payIn').value;
-            const pass = document.getElementById('pass').value;
-            const btn = document.getElementById('submitBtn');
-
-            if(!name || !amt || !pass) return alert("กรุณากรอกข้อมูลให้ครบ");
-            if(!confirm(`ยืนยันการหักเงินคุณ ${name}?`)) return;
-
-            btn.disabled = true;
-            btn.innerText = "กำลังบันทึก...";
-
-            try {
-                const res = await fetch(`${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`);
-                const txt = await res.text();
-                if(txt === "Success") {
-                    alert("บันทึกสำเร็จ!");
-                    location.reload();
-                } else {
-                    alert("ผิดพลาด: " + txt);
-                    btn.disabled = false;
-                    btn.innerText = "ยืนยันการหักเงิน";
                 }
-            } catch (e) {
-                alert("เชื่อมต่อล้มเหลว");
-                btn.disabled = false;
-            }
+            });
+            status.innerText = ""; // ล้างสถานะเมื่อโหลดเสร็จ
+        } catch (error) {
+            console.error(error);
+            status.innerText = "Error: ไม่สามารถดึงรายชื่อได้";
+            select.innerHTML = '<option value="">-- โหลดล้มเหลว --</option>';
         }
+    }
 
-        window.onload = loadUsers;
-    </script>
+    // อัปเดต UI เมื่อเลือกชื่อ
+    function updateUI() {
+        const selectedName = document.getElementById('userSel').value;
+        const user = users.find(u => u.name === selectedName);
+        const infoBox = document.getElementById('infoBox');
+        
+        if (user) {
+            document.getElementById('txtAmt').innerText = parseFloat(user.amount || 0).toFixed(2);
+            document.getElementById('txtBal').innerText = parseFloat(user.balance || 0).toFixed(2);
+            // แนะนำยอดจ่ายทั้งหมด
+            document.getElementById('payIn').value = (parseFloat(user.amount || 0) + parseFloat(user.balance || 0)).toFixed(2);
+            infoBox.style.display = 'block';
+        } else {
+            infoBox.style.display = 'none';
+        }
+    }
+
+    // ส่งข้อมูลหักเงิน
+    async function submitPay() {
+        const name = document.getElementById('userSel').value;
+        const amt = document.getElementById('payIn').value;
+        const pass = document.getElementById('pass').value;
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+
+        if (!name || !amt || !pass) return alert("กรุณาใส่ข้อมูลให้ครบ");
+        if (!confirm(`ยืนยันหักเงินคุณ ${name} จำนวน ${amt} บาท?`)) return;
+
+        btn.disabled = true;
+        status.innerText = "กำลังบันทึกลง Google Sheets...";
+
+        try {
+            const finalUrl = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`;
+            const res = await fetch(finalUrl);
+            const result = await res.text();
+
+            if (result === "Success") {
+                alert("✅ บันทึกสำเร็จ!");
+                location.reload();
+            } else {
+                alert("❌ ผิดพลาด: " + result);
+                btn.disabled = false;
+                status.innerText = "";
+            }
+        } catch (e) {
+            alert("❌ การเชื่อมต่อขัดข้อง");
+            btn.disabled = false;
+            status.innerText = "";
+        }
+    }
+
+    // เริ่มทำงานเมื่อโหลดหน้า
+    window.onload = loadData;
+</script>
+
 </body>
 </html>
