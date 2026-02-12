@@ -46,9 +46,7 @@
             letter-spacing: 1px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
 
         label {
             display: block;
@@ -92,10 +90,7 @@
             font-size: 16px;
         }
 
-        .val-red {
-            color: var(--netflix-red);
-            font-weight: 600;
-        }
+        .val-red { color: var(--netflix-red); font-weight: 600; }
 
         .btn-confirm {
             width: 100%;
@@ -111,16 +106,9 @@
             margin-top: 10px;
         }
 
-        .btn-confirm:hover {
-            background-color: #ff1e29;
-            transform: scale(1.01);
-        }
+        .btn-confirm:hover { background-color: #ff1e29; transform: scale(1.01); }
 
-        .btn-confirm:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-confirm:disabled { background-color: #555; cursor: not-allowed; }
 
         .status-msg {
             text-align: center;
@@ -144,7 +132,7 @@
     <div class="form-group">
         <label>Select Member</label>
         <select id="nameSelect" onchange="updateUI(this.value)">
-            <option value="">-- Choose User --</option>
+            <option value="">-- Loading names... --</option>
         </select>
     </div>
 
@@ -157,10 +145,6 @@
             <span>ยอดค้างชำระ (C):</span>
             <span id="txtBal" class="val-red">0.00</span>
         </div>
-        <div class="info-row" style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px; font-weight: 600;">
-            <span>รวมที่ต้องโอน:</span>
-            <span id="txtTotal">0.00</span>
-        </div>
     </div>
 
     <div class="form-group">
@@ -168,23 +152,23 @@
         <input type="number" id="payInput" step="0.01" placeholder="0.00">
     </div>
 
-    <button id="btnSubmit" class="btn-confirm" onclick="submitPay()">ยืนยันการตัดยอดเงิน</button>
-    <div id="loadingText" class="status-msg">กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
+    <button id="btnSubmit" class="btn-confirm" onclick="submitPay()">ยืนยันการหักเงิน</button>
+    <div id="loadingText" class="status-msg">บันทึกข้อมูลสำเร็จ ยอดเดือนนี้จะถูกหักก่อนยอดค้างชำระ</div>
 </div>
 
 <script>
-    // *** URL Web App ของคุณ ***
+    // เชื่อมต่อกับ URL ใหม่ของคุณ
     const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
     
     let users = [];
 
-    // โหลดข้อมูลเมื่อเปิดหน้า
+    // ดึงข้อมูลสมาชิก
     window.onload = async () => {
         try {
             const res = await fetch(API_URL);
             users = await res.json();
             const select = document.getElementById('nameSelect');
-            select.innerHTML = '<option value="">-- Choose User --</option>';
+            select.innerHTML = '<option value="">-- Select Member --</option>';
             users.forEach(u => {
                 let opt = document.createElement('option');
                 opt.value = u.name; 
@@ -192,32 +176,27 @@
                 select.appendChild(opt);
             });
         } catch (e) { 
-            alert("Error loading data. โปรดเช็คการตั้งค่า Permission ใน Apps Script เป็น 'Anyone'"); 
+            alert("Error loading names!"); 
         }
     };
 
-    // อัปเดตข้อมูล UI เมื่อเลือกชื่อ
+    // อัปเดตยอดเมื่อเลือกชื่อ (Fix undefined & ทศนิยมบนหน้าจอ)
     function updateUI(name) {
         const u = users.find(x => x.name === name);
         if(u) {
-            // Fix การแสดงผลตัวเลขและ undefined
             const amt = parseFloat(u.amount || 0);
             const bal = parseFloat(u.balance || 0);
-            const total = amt + bal;
-
             document.getElementById('txtAmt').innerText = amt.toFixed(2);
             document.getElementById('txtBal').innerText = bal.toFixed(2);
-            document.getElementById('txtTotal').innerText = total.toFixed(2);
-            
-            // ตั้งยอด Default เป็นยอดรวมอัตโนมัติ
-            document.getElementById('payInput').value = total.toFixed(2);
+            // แนะนำยอดโอนเป็นยอดรวม
+            document.getElementById('payInput').value = (amt + bal).toFixed(2);
             document.getElementById('infoBox').style.display = 'block';
         } else {
             document.getElementById('infoBox').style.display = 'none';
         }
     }
 
-    // ฟังก์ชันส่งค่าไปหักเงิน
+    // ส่งคำสั่งหักเงิน
     async function submitPay() {
         const name = document.getElementById('nameSelect').value;
         const amt = document.getElementById('payInput').value;
@@ -225,11 +204,12 @@
         const btn = document.getElementById('btnSubmit');
         const loader = document.getElementById('loadingText');
 
-        if(!name || !amt || !pass) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-        if(!confirm(`ยืนยันการตัดยอดของ ${name} จำนวน ${amt} บาท?\n(ระบบจะหักยอดเดือนนี้ก่อนตามด้วยยอดค้างชำระ)`)) return;
+        if(!name || !amt || !pass) return alert("Please fill all fields");
+        if(!confirm(`Confirm payment for ${name} amount ${amt} THB?`)) return;
 
         btn.disabled = true;
         loader.style.display = 'block';
+        loader.innerText = "Processing...";
 
         try {
             const finalUrl = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`;
@@ -237,21 +217,16 @@
             const result = await res.text();
             
             if(result === "Success") {
-                alert("ตัดยอดเงินสำเร็จ!");
+                alert("Payment Confirmed!");
                 location.reload();
-            } else if (result === "Wrong Password") {
-                alert("รหัสผ่าน Admin ไม่ถูกต้อง!");
-                btn.disabled = false;
-                loader.style.display = 'none';
             } else {
-                alert("ผิดพลาด: " + result);
+                alert("Error: " + result);
                 btn.disabled = false;
                 loader.style.display = 'none';
             }
         } catch (e) {
-            alert("Connection error! ไม่สามารถเชื่อมต่อกับ Google Sheets ได้");
+            alert("Network Error!");
             btn.disabled = false;
-            loader.style.display = 'none';
         }
     }
 </script>
