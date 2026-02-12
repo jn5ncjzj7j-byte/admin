@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Admin Manager</title>
+    <title>.</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -122,7 +122,7 @@
 <body>
 
 <div class="admin-card">
-    <h2>ADMIN PANEL</h2>
+    <h2>แก้ไขเงิน</h2>
     
     <div class="form-group">
         <label>Password</label>
@@ -132,7 +132,7 @@
     <div class="form-group">
         <label>Select Member</label>
         <select id="nameSelect" onchange="updateUI(this.value)">
-            <option value="">-- Loading names... --</option>
+            <option value="">-- กำลังโหลดชื่อ... --</option>
         </select>
     </div>
 
@@ -153,7 +153,7 @@
     </div>
 
     <button id="btnSubmit" class="btn-confirm" onclick="submitPay()">ยืนยันการหักเงิน</button>
-    <div id="loadingText" class="status-msg">บันทึกข้อมูลสำเร็จ ยอดเดือนนี้จะถูกหักก่อนยอดค้างชำระ</div>
+    <div id="loadingText" class="status-msg">บันทึกข้อมูลสำเร็จ</div>
 </div>
 
 <script>
@@ -168,7 +168,7 @@
             const res = await fetch(API_URL);
             users = await res.json();
             const select = document.getElementById('nameSelect');
-            select.innerHTML = '<option value="">-- Select Member --</option>';
+            select.innerHTML = '<option value="">-- เลือกรายชื่อ --</option>';
             users.forEach(u => {
                 let opt = document.createElement('option');
                 opt.value = u.name; 
@@ -209,7 +209,7 @@
 
         btn.disabled = true;
         loader.style.display = 'block';
-        loader.innerText = "Processing...";
+        loader.innerText = "กำลังทำงาน...";
 
         try {
             const finalUrl = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`;
