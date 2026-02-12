@@ -2,83 +2,234 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Netflix Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { background: #141414; color: white; font-family: 'Kanit', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 10px; width: 350px; border: 1px solid #333; }
-        h2 { color: #E50914; text-align: center; }
-        select, input { width: 100%; padding: 12px; margin-top: 10px; background: #333; border: none; color: white; border-radius: 5px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: #E50914; border: none; color: white; font-weight: bold; margin-top: 20px; cursor: pointer; border-radius: 5px; }
-        .info { background: #222; padding: 15px; margin-top: 15px; border-radius: 5px; display: none; }
+        :root {
+            --netflix-red: #E50914;
+            --netflix-black: #141414;
+            --netflix-dark-grey: #181818;
+            --netflix-light-grey: #2f2f2f;
+            --text-white: #ffffff;
+            --text-grey: #b3b3b3;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--netflix-black);
+            color: var(--text-white);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .admin-card {
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+        }
+
+        h2 {
+            color: var(--netflix-red);
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-grey);
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 15px;
+            background-color: var(--netflix-light-grey);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            font-family: 'Kanit', sans-serif;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus {
+            background-color: #444;
+            border-bottom: 3px solid var(--netflix-red);
+        }
+
+        .info-panel {
+            background-color: var(--netflix-dark-grey);
+            padding: 20px;
+            border-radius: 4px;
+            margin: 25px 0;
+            display: none;
+            border: 1px solid #333;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .val-red { color: var(--netflix-red); font-weight: 600; }
+
+        .btn-confirm {
+            width: 100%;
+            background-color: var(--netflix-red);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .btn-confirm:hover { background-color: #ff1e29; transform: scale(1.01); }
+
+        .btn-confirm:disabled { background-color: #555; cursor: not-allowed; }
+
+        .status-msg {
+            text-align: center;
+            font-size: 13px;
+            margin-top: 20px;
+            color: var(--text-grey);
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>ADMIN PANEL</h2>
-        <input type="password" id="pass" placeholder="Password">
-        <select id="userSel" onchange="showInfo()">
-            <option value="">-- LOADING NAMES... --</option>
-        </select>
-        
-        <div id="info" class="info">
-            <div>เดือนนี้: <span id="txtAmt">0</span></div>
-            <div>ค้างชำระ: <span id="txtBal" style="color:#E50914">0</span></div>
-        </div>
 
-        <input type="number" id="payIn" placeholder="Amount to pay">
-        <button class="btn" onclick="sendData()">CONFIRM PAYMENT</button>
-        <p id="st" style="text-align:center; font-size:12px; color: grey;"></p>
+<div class="admin-card">
+    <h2>แก้ไขเงิน</h2>
+    
+    <div class="form-group">
+        <label>รหัส</label>
+        <input type="password" id="pass" placeholder="ใส่รหัส...">
     </div>
 
+    <div class="form-group">
+        <label>เลือกรายชื่อ</label>
+        <select id="nameSelect" onchange="updateUI(this.value)">
+            <option value="">-- กำลังโหลดชื่อ --</option>
+        </select>
+    </div>
+
+    <div id="infoBox" class="info-panel">
+        <div class="info-row">
+            <span>ยอดเดือนนี้ :</span>
+            <span id="txtAmt">0.00</span>
+        </div>
+        <div class="info-row">
+            <span>ยอดค้างชำระ :</span>
+            <span id="txtBal" class="val-red">0.00</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>ใส่ยอดเงิน</label>
+        <input type="number" id="payInput" step="0.01" placeholder="0.00">
+    </div>
+
+    <button id="btnSubmit" class="btn-confirm" onclick="submitPay()">ยืนยันการหักเงิน</button>
+    <div id="loadingText" class="status-msg">บันทึกข้อมูลสำเร็จ</div>
+</div>
+
 <script>
-    const url = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
+    // เชื่อมต่อกับ URL ใหม่ของคุณ
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
+    
     let users = [];
 
-    // Force load data
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            users = data;
-            const sel = document.getElementById('userSel');
-            sel.innerHTML = '<option value="">-- SELECT USER --</option>';
-            data.forEach(u => {
+    // ดึงข้อมูลสมาชิก
+    window.onload = async () => {
+        try {
+            const res = await fetch(API_URL);
+            users = await res.json();
+            const select = document.getElementById('nameSelect');
+            select.innerHTML = '<option value="">-- เลือกรายชื่อ --</option>';
+            users.forEach(u => {
                 let opt = document.createElement('option');
-                opt.value = u.name;
-                opt.textContent = u.name;
-                sel.appendChild(opt);
+                opt.value = u.name; 
+                opt.innerText = u.name;
+                select.appendChild(opt);
             });
-            document.getElementById('st').innerText = "Loaded: " + data.length + " users";
-        })
-        .catch(err => {
-            document.getElementById('st').innerText = "CORS BLOCK: Open the /exec link in a new tab first, then refresh this page.";
-            console.error(err);
-        });
+        } catch (e) { 
+            alert("ไม่สามารถ"); 
+        }
+    };
 
-    function showInfo() {
-        const u = users.find(x => x.name === document.getElementById('userSel').value);
+    // อัปเดตยอดเมื่อเลือกชื่อ (Fix undefined & ทศนิยมบนหน้าจอ)
+    function updateUI(name) {
+        const u = users.find(x => x.name === name);
         if(u) {
-            document.getElementById('txtAmt').innerText = u.amount.toFixed(2);
-            document.getElementById('txtBal').innerText = u.balance.toFixed(2);
-            document.getElementById('payIn').value = (u.amount + u.balance).toFixed(2);
-            document.getElementById('info').style.display = 'block';
+            const amt = parseFloat(u.amount || 0);
+            const bal = parseFloat(u.balance || 0);
+            document.getElementById('txtAmt').innerText = amt.toFixed(2);
+            document.getElementById('txtBal').innerText = bal.toFixed(2);
+            // แนะนำยอดโอนเป็นยอดรวม
+            document.getElementById('payInput').value = (amt + bal).toFixed(2);
+            document.getElementById('infoBox').style.display = 'block';
+        } else {
+            document.getElementById('infoBox').style.display = 'none';
         }
     }
 
-    function sendData() {
-        const name = document.getElementById('userSel').value;
-        const amt = document.getElementById('payIn').value;
+    // ส่งคำสั่งหักเงิน
+    async function submitPay() {
+        const name = document.getElementById('nameSelect').value;
+        const amt = document.getElementById('payInput').value;
         const pass = document.getElementById('pass').value;
-        if(!name || !amt || !pass) return alert("Fill everything");
-        
-        document.getElementById('st').innerText = "Sending...";
-        fetch(`${url}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`)
-            .then(r => r.text())
-            .then(t => {
-                if(t === "Success") { alert("DONE!"); location.reload(); }
-                else alert(t);
-            });
+        const btn = document.getElementById('btnSubmit');
+        const loader = document.getElementById('loadingText');
+
+        if(!name || !amt || !pass) return alert("โปรดใส่ข้อมูลให้หมด");
+        if(!confirm(`Confirm payment for ${name} amount ${amt} THB?`)) return;
+
+        btn.disabled = true;
+        loader.style.display = 'block';
+        loader.innerText = "กำลังทำงาน...";
+
+        try {
+            const finalUrl = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`;
+            const res = await fetch(finalUrl);
+            const result = await res.text();
+            
+            if(result === "Success") {
+                alert("ยืนยันการแก้ใข");
+                location.reload();
+            } else {
+                alert("Error: " + result);
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        } catch (e) {
+            alert("Network Error!");
+            btn.disabled = false;
+        }
     }
 </script>
+
 </body>
 </html>
