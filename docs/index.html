@@ -3,64 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Manager</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
+    <title>ระบบจัดการหลังบ้าน - Netflix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .admin-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, select { width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-confirm { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 6px; margin-top: 20px; cursor: pointer; font-weight: bold; }
-        .info { background: #fffcf0; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107; }
+        :root {
+            --primary-color: #E50914;
+            --success-color: #28a745;
+            --bg-color: #f0f2f5;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .admin-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            font-family: 'Kanit', sans-serif;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+        }
+        .info-panel {
+            background: #fffcf0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #ffc107;
+            display: none; /* ซ่อนไว้ก่อนเลือกชื่อ */
+        }
+        .info-panel p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .btn-confirm {
+            width: 100%;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+        .btn-confirm:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+        .btn-confirm:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .loader {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="admin-card">
-        <h2 style="text-align:center;">Admin Manager</h2>
-        <input type="password" id="pass" placeholder="ใส่รหัสผ่าน Admin">
-        <select id="nameSelect" onchange="showOldBal(this.value)">
-            <option value="">-- กำลังดึงรายชื่อ... --</option>
-        </select>
-        <div id="info" class="info" style="display:none;">
-            ยอดค้างปัจจุบัน: <strong id="oldBalText">0</strong> บาท
-        </div>
-        <input type="number" id="payAmt" placeholder="จำนวนเงินที่โอนมาจริง">
-        <button class="btn-confirm" onclick="confirmPay()">ยืนยันและหักยอดเงิน</button>
+
+<div class="admin-card">
+    <h2>Admin Manager</h2>
+    
+    <label>รหัสผ่านผู้ดูแลระบบ:</label>
+    <input type="password" id="adminPassword" placeholder="กรอกรหัสผ่าน Admin">
+
+    <hr style="margin: 25px 0; border: 0.5px solid #eee;">
+
+    <label>เลือกรายชื่อที่ต้องการหักยอด:</label>
+    <select id="nameSelect" onchange="updateUserDisplay(this.value)">
+        <option value="">-- กำลังโหลดรายชื่อ... --</option>
+    </select>
+
+    <div id="infoPanel" class="info-panel">
+        <p>ยอดที่ต้องจ่ายเดือนนี้: <strong id="curAmt">0</strong> บาท</p>
+        <p>ยอดเงินที่ติดค้างเดิม: <strong id="oldBal" style="color: red;">0</strong> บาท</p>
     </div>
-    <script>
-        const ADMIN_API = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
-        const DATA_API = 'https://script.google.com/macros/s/AKfycbyeOqI_UhWg1zo7ERlXisqrsxvVtBvkcoMBmds3YawvhIMFNPm5UZDTBAfTpmPW0gw8EQ/exec';
-        let users = [];
-        window.onload = async () => {
-            const res = await fetch(DATA_API);
-            users = await res.json();
+
+    <label style="margin-top: 20px;">จำนวนเงินที่ต้องการหัก (ยอดที่โอนมาจริง):</label>
+    <input type="number" id="payAmount" placeholder="ตัวอย่าง: 85">
+
+    <button id="submitBtn" class="btn-confirm" onclick="handleConfirm()">ยืนยันการบันทึกยอดเงิน</button>
+    <div id="statusMessage" class="loader" style="display:none;">กำลังประมวลผล...</div>
+</div>
+
+<script>
+    // --- ตั้งค่า URL ของคุณที่นี่ ---
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
+
+    let userDataList = [];
+
+    // 1. ดึงรายชื่อจาก Sheets ทันทีที่เปิดหน้าเว็บ
+    window.onload = async () => {
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            userDataList = data;
+
             const select = document.getElementById('nameSelect');
-            select.innerHTML = '<option value="">-- เลือกชื่อ --</option>';
-            users.forEach(u => {
-                let opt = document.createElement('option');
-                opt.value = u.name; opt.innerText = u.name;
-                select.appendChild(opt);
+            select.innerHTML = '<option value="">-- เลือกรายชื่อสมาชิก --</option>';
+
+            if (data.length === 0) {
+                select.innerHTML = '<option value="">ไม่พบข้อมูลในระบบ</option>';
+                return;
+            }
+
+            data.forEach(user => {
+                let option = document.createElement('option');
+                option.value = user.name;
+                option.innerText = user.name;
+                select.appendChild(option);
             });
-        };
-        function showOldBal(name) {
-            const u = users.find(x => x.name === name);
-            if(u) {
-                document.getElementById('oldBalText').innerText = u.balance;
-                document.getElementById('info').style.display = 'block';
-                document.getElementById('payAmt').value = u.amount;
-            }
+        } catch (error) {
+            console.error(error);
+            alert("ไม่สามารถดึงข้อมูลได้ โปรดตรวจสอบการ Deploy (ต้องเลือก Anyone)");
         }
-        async function confirmPay() {
-            const name = document.getElementById('nameSelect').value;
-            const amt = document.getElementById('payAmt').value;
-            const password = document.getElementById('pass').value;
-            if(!name || !amt || !password) return alert("กรุณากรอกข้อมูลให้ครบ");
-            if(confirm(`ยืนยันหักเงิน ${name} จำนวน ${amt} บาท?`)) {
-                const res = await fetch(`${ADMIN_API}?action=admin_confirm&password=${password}&name=${encodeURIComponent(name)}&pay_amount=${amt}`);
-                const result = await res.text();
-                if(result === "Success") { alert("สำเร็จ!"); location.reload(); }
-                else { alert("ผิดพลาด: " + result); }
-            }
+    };
+
+    // 2. เมื่อเลือกชื่อ ให้โชว์ยอดเงินค้างชำระ
+    function updateUserDisplay(selectedName) {
+        const user = userDataList.find(u => u.name === selectedName);
+        const panel = document.getElementById('infoPanel');
+        
+        if (user) {
+            // แก้ปัญหา undefined โดยตรวจสอบค่าก่อนแสดงผล
+            document.getElementById('curAmt').innerText = (user.amount || 0).toLocaleString();
+            document.getElementById('oldBal').innerText = (user.balance || 0).toLocaleString();
+            document.getElementById('payAmount').value = user.amount || 0; // ตั้งค่าเริ่มต้นให้เท่ากับยอดจ่ายเดือนนี้
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
         }
-    </script>
+    }
+
+    // 3. ฟังก์ชันส่งข้อมูลไปหักยอดเงินใน Sheets
+    async function handleConfirm() {
+        const name = document.getElementById('nameSelect').value;
+        const amount = document.getElementById('payAmount').value;
+        const password = document.getElementById('adminPassword').value;
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('statusMessage');
+
+        if (!name || !amount || !password) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วน (รหัสผ่าน, ชื่อ, ยอดเงิน)");
+            return;
+        }
+
+        if (!confirm(`ยืนยันการหักยอดเงินของคุณ ${name} เป็นจำนวน ${amount} บาท?`)) {
+            return;
+        }
+
+        // เริ่มต้นส่งข้อมูล
+        btn.disabled = true;
+        status.style.display = 'block';
+
+        try {
+            const finalUrl = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(password)}&name=${encodeURIComponent(name)}&pay_amount=${amount}`;
+            const response = await fetch(finalUrl);
+            const result = await response.text();
+
+            if (result === "Success") {
+                alert("บันทึกข้อมูลสำเร็จ! ยอดเงินใน Sheets ถูกหักแล้ว");
+                location.reload(); // รีโหลดหน้าเพื่ออัปเดตข้อมูลใหม่
+            } else if (result === "Wrong Password") {
+                alert("รหัสผ่านไม่ถูกต้อง!");
+                btn.disabled = false;
+                status.style.display = 'none';
+            } else {
+                alert("เกิดข้อผิดพลาด: " + result);
+                btn.disabled = false;
+                status.style.display = 'none';
+            }
+        } catch (error) {
+            alert("ไม่สามารถเชื่อมต่อกับ Google Sheets ได้");
+            btn.disabled = false;
+            status.style.display = 'none';
+        }
+    }
+</script>
+
 </body>
 </html>
