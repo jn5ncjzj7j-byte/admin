@@ -2,138 +2,83 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Admin Manager</title>
+    <title>Netflix Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --red: #E50914; --black: #141414; --grey: #2f2f2f; }
-        body { font-family: 'Kanit', sans-serif; background: var(--black); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background: rgba(0,0,0,0.95); padding: 40px; border-radius: 8px; width: 100%; max-width: 400px; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
-        h2 { color: var(--red); text-align: center; margin-bottom: 30px; font-weight: 600; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 13px; color: #b3b3b3; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; background: var(--grey); border: none; border-radius: 4px; color: white; font-size: 16px; outline: none; box-sizing: border-box; }
-        .info { background: #181818; padding: 20px; border-radius: 4px; margin: 20px 0; display: none; border: 1px solid #333; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .btn { width: 100%; background: var(--red); color: white; border: none; padding: 16px; border-radius: 4px; font-size: 18px; font-weight: 600; cursor: pointer; }
-        #status { text-align: center; color: var(--red); font-size: 14px; margin-top: 15px; }
+        body { background: #141414; color: white; font-family: 'Kanit', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: rgba(0,0,0,0.9); padding: 30px; border-radius: 10px; width: 350px; border: 1px solid #333; }
+        h2 { color: #E50914; text-align: center; }
+        select, input { width: 100%; padding: 12px; margin-top: 10px; background: #333; border: none; color: white; border-radius: 5px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; background: #E50914; border: none; color: white; font-weight: bold; margin-top: 20px; cursor: pointer; border-radius: 5px; }
+        .info { background: #222; padding: 15px; margin-top: 15px; border-radius: 5px; display: none; }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h2>แก้ไขเงินสมาชิก</h2>
-    
-    <div class="form-group">
-        <label>รหัสผ่านแอดมิน</label>
-        <input type="password" id="pass" placeholder="••••••••">
-    </div>
-
-    <div class="form-group">
-        <label>เลือกชื่อสมาชิก</label>
-        <select id="userSel" onchange="updateUI()">
-            <option value="">-- กำลังโหลดรายชื่อ... --</option>
+    <div class="card">
+        <h2>ADMIN PANEL</h2>
+        <input type="password" id="pass" placeholder="Password">
+        <select id="userSel" onchange="showInfo()">
+            <option value="">-- LOADING NAMES... --</option>
         </select>
-    </div>
+        
+        <div id="info" class="info">
+            <div>เดือนนี้: <span id="txtAmt">0</span></div>
+            <div>ค้างชำระ: <span id="txtBal" style="color:#E50914">0</span></div>
+        </div>
 
-    <div id="infoBox" class="info">
-        <div class="row"><span>ยอดเดือนนี้ (B):</span><span id="txtAmt">0.00</span></div>
-        <div class="row"><span>ยอดค้างชำระ (C):</span><span id="txtBal" style="color:var(--red)">0.00</span></div>
+        <input type="number" id="payIn" placeholder="Amount to pay">
+        <button class="btn" onclick="sendData()">CONFIRM PAYMENT</button>
+        <p id="st" style="text-align:center; font-size:12px; color: grey;"></p>
     </div>
-
-    <div class="form-group">
-        <label>จำนวนเงินที่รับมา</label>
-        <input type="number" id="payIn" step="0.01" placeholder="0.00">
-    </div>
-
-    <button id="submitBtn" class="btn" onclick="submitPay()">ยืนยันบันทึกข้อมูล</button>
-    <div id="status"></div>
-</div>
 
 <script>
-    // URL ที่คุณยืนยันว่าเปิดดูได้
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
+    const url = 'https://script.google.com/macros/s/AKfycbxQHFzt7U21SDZ05aDWy3hqZVaR6BPrvuEwnsLh8eU6DE72meJatoksMpAdudU46KEUJg/exec';
     let users = [];
 
-    async function loadData() {
-        const select = document.getElementById('userSel');
-        const status = document.getElementById('status');
-        
-        try {
-            // ดึงข้อมูลผ่าน Fetch แบบธรรมดาที่สุด
-            const response = await fetch(API_URL);
-            const data = await response.json();
-            
-            // เก็บข้อมูลและกรองตัวว่าง
-            users = data.filter(u => u.name && u.name !== "undefined");
-
-            select.innerHTML = '<option value="">-- เลือกสมาชิก --</option>';
-            
-            if (users.length === 0) {
-                status.innerText = "ไม่พบข้อมูลในระบบ";
-                return;
-            }
-
-            users.forEach(user => {
+    // Force load data
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            users = data;
+            const sel = document.getElementById('userSel');
+            sel.innerHTML = '<option value="">-- SELECT USER --</option>';
+            data.forEach(u => {
                 let opt = document.createElement('option');
-                opt.value = user.name;
-                opt.textContent = user.name;
-                select.appendChild(opt);
+                opt.value = u.name;
+                opt.textContent = u.name;
+                sel.appendChild(opt);
             });
+            document.getElementById('st').innerText = "Loaded: " + data.length + " users";
+        })
+        .catch(err => {
+            document.getElementById('st').innerText = "CORS BLOCK: Open the /exec link in a new tab first, then refresh this page.";
+            console.error(err);
+        });
 
-            status.innerText = "โหลดสำเร็จ " + users.length + " รายชื่อ";
-            setTimeout(() => status.innerText = "", 3000);
-
-        } catch (err) {
-            console.error("Fetch Error:", err);
-            status.innerText = "Error: ไม่สามารถดึงข้อมูลได้ (อาจติด CORS)";
-            
-            // วิธีแก้ฉุกเฉิน: ถ้าโหลดไม่ได้ ให้แจ้งเตือนแอดมิน
-            select.innerHTML = '<option value="">-- โหลดล้มเหลว กรุณารีเฟรช --</option>';
+    function showInfo() {
+        const u = users.find(x => x.name === document.getElementById('userSel').value);
+        if(u) {
+            document.getElementById('txtAmt').innerText = u.amount.toFixed(2);
+            document.getElementById('txtBal').innerText = u.balance.toFixed(2);
+            document.getElementById('payIn').value = (u.amount + u.balance).toFixed(2);
+            document.getElementById('info').style.display = 'block';
         }
     }
 
-    function updateUI() {
-        const selected = document.getElementById('userSel').value;
-        const user = users.find(u => u.name === selected);
-        if (user) {
-            document.getElementById('txtAmt').innerText = Number(user.amount).toFixed(2);
-            document.getElementById('txtBal').innerText = Number(user.balance).toFixed(2);
-            document.getElementById('payIn').value = (Number(user.amount) + Number(user.balance)).toFixed(2);
-            document.getElementById('infoBox').style.display = 'block';
-        }
-    }
-
-    async function submitPay() {
+    function sendData() {
         const name = document.getElementById('userSel').value;
         const amt = document.getElementById('payIn').value;
         const pass = document.getElementById('pass').value;
-        const btn = document.getElementById('submitBtn');
-
-        if (!name || !amt || !pass) return alert("ใส่ข้อมูลให้ครบ");
+        if(!name || !amt || !pass) return alert("Fill everything");
         
-        btn.disabled = true;
-        document.getElementById('status').innerText = "กำลังส่งข้อมูล...";
-
-        try {
-            const url = `${API_URL}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`;
-            const res = await fetch(url);
-            const result = await res.text();
-
-            if (result.includes("Success")) {
-                alert("✅ บันทึกสำเร็จ!");
-                location.reload();
-            } else {
-                alert("❌ ผิดพลาด: " + result);
-                btn.disabled = false;
-            }
-        } catch (e) {
-            alert("❌ เชื่อมต่อไม่สำเร็จ");
-            btn.disabled = false;
-        }
+        document.getElementById('st').innerText = "Sending...";
+        fetch(`${url}?action=admin_confirm&password=${encodeURIComponent(pass)}&name=${encodeURIComponent(name)}&pay_amount=${amt}`)
+            .then(r => r.text())
+            .then(t => {
+                if(t === "Success") { alert("DONE!"); location.reload(); }
+                else alert(t);
+            });
     }
-
-    window.onload = loadData;
 </script>
 </body>
 </html>
