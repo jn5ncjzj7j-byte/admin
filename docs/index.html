@@ -126,13 +126,13 @@
     
     <div class="form-group">
         <label>Password</label>
-        <input type="password" id="pass" placeholder="Enter Password">
+        <input type="password" id="pass" placeholder="ใส่รหัส...">
     </div>
 
     <div class="form-group">
-        <label>Select Member</label>
+        <label>เลือกรายชื่อ</label>
         <select id="nameSelect" onchange="updateUI(this.value)">
-            <option value="">-- กำลังโหลดชื่อ... --</option>
+            <option value="">-- กำลังโหลดชื่อ --</option>
         </select>
     </div>
 
@@ -148,7 +148,7 @@
     </div>
 
     <div class="form-group">
-        <label>Amount to Deduct (THB)</label>
+        <label>ใส่ยอดเงิน</label>
         <input type="number" id="payInput" step="0.01" placeholder="0.00">
     </div>
 
@@ -176,7 +176,7 @@
                 select.appendChild(opt);
             });
         } catch (e) { 
-            alert("Error loading names!"); 
+            alert("ไม่สามารถ"); 
         }
     };
 
@@ -204,7 +204,7 @@
         const btn = document.getElementById('btnSubmit');
         const loader = document.getElementById('loadingText');
 
-        if(!name || !amt || !pass) return alert("Please fill all fields");
+        if(!name || !amt || !pass) return alert("โปรดใส่ข้อมูลให้หมด");
         if(!confirm(`Confirm payment for ${name} amount ${amt} THB?`)) return;
 
         btn.disabled = true;
@@ -217,7 +217,7 @@
             const result = await res.text();
             
             if(result === "Success") {
-                alert("Payment Confirmed!");
+                alert("ยืนยันการแก้ใข");
                 location.reload();
             } else {
                 alert("Error: " + result);
